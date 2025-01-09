@@ -1,122 +1,111 @@
 <!DOCTYPE html>
-<html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | IEC_AnnoyingYear</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-  </head>
-  <body>
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=1080 height=1920 tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
-        </div>
-      </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-webgl-logo"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">IEC_AnnoyingYear</div>
-      </div>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no">
+  <title>Responsive Playable Ad</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    #video-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    #background-video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* Maintain aspect ratio */
+    }
+    #clickable-button {
+      position: absolute;
+      background-color: rgba(255, 0, 0, 0); /* Invisible */
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="video-container">
+      <!-- Background Video -->
+      <video id="background-video" autoplay muted loop>
+        <source src="assets/video.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
     </div>
-    <script>
+    <!-- Invisible Clickable Button -->
+    <button id="clickable-button"></button>
+  </div>
 
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
-      var warningBanner = document.querySelector("#unity-warning");
+  <script>
+    const container = document.getElementById('container');
+    const backgroundVideo = document.getElementById('background-video');
+    const clickableButton = document.getElementById('clickable-button');
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-        }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
-      }
+    // Original video and button dimensions
+    const videoOriginalWidth = 1080; // Original video width
+    const videoOriginalHeight = 1920; // Original video height
+    const buttonOriginalWidth = 160; // Button collider width
+    const buttonOriginalHeight = 30; // Button collider height
+    const buttonOriginalX = (1080 / 2) - (160 / 2); // Centered horizontally
+    const buttonOriginalY = (1920 / 2) + 547; // Positioned at Y = -547
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/IEC_annoyingyear.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/IEC_annoyingyear.data",
-        frameworkUrl: buildUrl + "/IEC_annoyingyear.framework.js",
-        codeUrl: buildUrl + "/IEC_annoyingyear.wasm",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "IEC_AnnoyingYear",
-        productVersion: "1.0.2",
-        showBanner: unityShowBanner,
-      };
+    // Function to resize video and button dynamically
+    function resizeContainer() {
+      // Get the browser window size
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
 
-      // By default, Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
+      // Calculate the scale to maintain aspect ratio
+      const scale = Math.min(windowWidth / videoOriginalWidth, windowHeight / videoOriginalHeight);
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
+      // Calculate the adjusted container dimensions
+      const containerWidth = videoOriginalWidth * scale;
+      const containerHeight = videoOriginalHeight * scale;
 
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        container.className = "unity-mobile";
-        canvas.className = "unity-mobile";
+      // Apply container dimensions
+      container.style.width = `${containerWidth}px`;
+      container.style.height = `${containerHeight}px`;
 
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        // config.devicePixelRatio = 1;
+      // Center the video
+      backgroundVideo.style.width = `${containerWidth}px`;
+      backgroundVideo.style.height = `${containerHeight}px`;
 
+      // Adjust the button size and position based on the container
+      clickableButton.style.width = `${buttonOriginalWidth * scale}px`;
+      clickableButton.style.height = `${buttonOriginalHeight * scale}px`;
+      clickableButton.style.left = `${buttonOriginalX * scale}px`;
+      clickableButton.style.top = `${buttonOriginalY * scale}px`;
+    }
 
-      } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
+    // Event listeners for resizing
+    window.addEventListener('resize', resizeContainer);
+    window.addEventListener('load', resizeContainer);
 
-        canvas.style.width = "1080px";
-        canvas.style.height = "1920px";
-      }
-
-      loadingBar.style.display = "block";
-
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-              }).then((unityInstance) => {
-                loadingBar.style.display = "none";
-                fullscreenButton.onclick = () => {
-                  unityInstance.SetFullscreen(1);
-                };
-              }).catch((message) => {
-                alert(message);
-              });
-            };
-
-      document.body.appendChild(script);
-
-    </script>
-  </body>
+    // Redirect on button click
+    clickableButton.addEventListener('click', () => {
+      window.location.href = 'https://play.google.com/store/apps/details?id=com.playnearn&hl=en';
+    });
+  </script>
+</body>
 </html>
